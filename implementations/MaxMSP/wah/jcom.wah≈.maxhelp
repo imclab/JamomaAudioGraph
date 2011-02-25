@@ -23,6 +23,7 @@
 					"floatoutput" : 1,
 					"id" : "obj-9",
 					"maxclass" : "slider",
+					"min" : 20.0,
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
@@ -106,7 +107,7 @@
 					"name" : "jcom.maxhelpui.maxpat",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 0.0, 0.0, 977.0, 70.0 ]
+					"patching_rect" : [ 0.0, 0.0, 978.0, 70.0 ]
 				}
 
 			}
