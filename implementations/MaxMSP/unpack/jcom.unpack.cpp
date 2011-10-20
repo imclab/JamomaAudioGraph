@@ -434,9 +434,34 @@ void UnpackDsp(UnpackPtr self, t_signal** sp, short* count)
 }
 
 
+class AudioGraph_MSPContext {
+	
+};
+
+
+static t_hashtab *s_dspchains_to_jagcontexts = NULL;
+
+
 // DSP Method
 void UnpackDsp64(UnpackPtr self, ObjectPtr dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
+	if (!s_dspchains_to_jagcontexts)
+		s_dspchains_to_jagcontexts = hashtab_new(0); // NOTE: could free this in a quittask
+	
+	AudioGraph_MSPContext *context = NULL;
+	
+	hashtab_lookup(s_dspchains_to_jagcontexts, dsp64, &context);
+	if (context) {
+		;
+	}
+	else {
+		// This context does not exist
+		context = new AudioGraph_MSPContext;
+		
+	}
+
+	
+	
 	TTUInt16	i;
 	MaxErr		err;
 	long		result = 0;
