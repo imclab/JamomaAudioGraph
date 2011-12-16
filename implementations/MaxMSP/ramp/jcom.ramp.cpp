@@ -12,7 +12,7 @@
 int TTCLASSWRAPPERMAX_EXPORT main(void)
 {
 	MaxAudioGraphWrappedClassOptionsPtr	options = new MaxAudioGraphWrappedClassOptions;
-//	TTValue								value(0);
+	TTValue								value;
 	MaxAudioGraphWrappedClassPtr			c = NULL;
 
 	TTAudioGraphInit();
@@ -20,6 +20,13 @@ int TTCLASSWRAPPERMAX_EXPORT main(void)
 //	options->append(TT("generator"), value);
 	options->append(TT("generator"), kTTBoolYes);
 	options->append(TT("userCanSetNumChannels"), kTTBoolYes);
+	
+	
+	value.clear();
+	value.append(0);
+	value.append(TT("receivedMessage"));
+	options->append(TT("controlOutletFromNotification"), value);	
+	
 	wrapAsMaxAudioGraph(TT("ramp"), "jcom.ramp≈", &c, options);
 	wrapAsMaxAudioGraph(TT("ramp"), "ramp≈", &c, options);
 

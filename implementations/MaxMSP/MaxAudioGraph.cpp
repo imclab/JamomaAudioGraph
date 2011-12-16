@@ -9,7 +9,8 @@
  */
 
 #include "maxAudioGraph.h"
-#include "ext_hashtab.h"
+//#include "TTCallback.h"
+//#include "ext_hashtab.h"
 
 #define MAX_NUM_INLETS 16
 
@@ -21,7 +22,9 @@ typedef struct _wrappedInstance {
 	TTPtr						inlets[MAX_NUM_INLETS];				///< Array of proxy inlets beyond the first inlet
 	MaxAudioGraphWrappedClassPtr	wrappedClassDefinition;	///< A pointer to the class definition
 	TTUInt8						numInputs;
-	TTUInt8						numOutputs;
+	TTUInt8						numOutputs;	
+	TTPtr           controlOutlet;              ///< for output from a notification
+    TTObjectPtr     controlCallback;            ///< for output from a notification
 } WrappedInstance;
 
 typedef WrappedInstance* WrappedInstancePtr;		///< Pointer to a wrapped instance of our object.
@@ -30,6 +33,18 @@ typedef WrappedInstance* WrappedInstancePtr;		///< Pointer to a wrapped instance
 /** A hash of all wrapped clases, keyed on the Max class name. */
 static t_hashtab*	wrappedMaxClasses = NULL;
 
+
+
+void MaxAudioGraphWrappedClass_receiveNotificationForOutlet(WrappedInstancePtr self, TTValue& arg)
+{
+    TTString    string = "";
+    SymbolPtr   s;
+    
+    arg.get(0, string);
+    s = gensym((char*)string.c_str());
+	TTLogMessage("here: %s",string.c_str());
+    outlet_anything(self->controlOutlet, s, 0, NULL);
+}
 
 ObjectPtr MaxAudioGraphWrappedClass_new(SymbolPtr name, AtomCount argc, AtomPtr argv)
 {	
@@ -73,6 +88,8 @@ ObjectPtr MaxAudioGraphWrappedClass_new(SymbolPtr name, AtomCount argc, AtomPtr 
 			self->inlets[i-1] = proxy_new(self, i, NULL);
 		
     	object_obex_store((void*)self, _sym_dumpout, (object*)outlet_new(self, NULL));	// dumpout
+		
+		
 		if (wrappedMaxClass->options && !wrappedMaxClass->options->lookup(TT("argumentDefinesNumOutlets"), v)) {
 			long argumentOffsetToDefineTheNumberOfOutlets = v;
 			if ((attrstart-argumentOffsetToDefineTheNumberOfOutlets > 0) && argv+argumentOffsetToDefineTheNumberOfOutlets)
@@ -83,9 +100,11 @@ ObjectPtr MaxAudioGraphWrappedClass_new(SymbolPtr name, AtomCount argc, AtomPtr 
 			if (wrapperDefinedNumberOfOutlets > 0) 
 				self->numOutputs = wrapperDefinedNumberOfOutlets;
 		}		
+	        
 		for (TTInt16 i=self->numOutputs-1; i>=0; i--)
 			self->audioGraphOutlets[i] = outlet_new(self, "audio.connect");
 
+		
 		self->wrappedClassDefinition = wrappedMaxClass;
 		v.setSize(3);
 		v.set(0, wrappedMaxClass->ttClassName);
@@ -95,8 +114,31 @@ ObjectPtr MaxAudioGraphWrappedClass_new(SymbolPtr name, AtomCount argc, AtomPtr 
 		if (wrappedMaxClass->options && !wrappedMaxClass->options->lookup(TT("generator"), v))
 			self->audioGraphObject->addAudioFlag(kTTAudioGraphGenerator);
 		if (wrappedMaxClass->options && !wrappedMaxClass->options->lookup(TT("nonadapting"), v))
-			self->audioGraphObject->addAudioFlag(kTTAudioGraphNonAdapting);
-			
+			self->audioGraphObject->addAudioFlag(kTTAudioGraphNonAdapting);	
+		
+		if (wrappedMaxClass->options && !wrappedMaxClass->options->lookup(TT("controlOutletFromNotification"), v)) {
+			TTUInt16    outletIndex = 0;
+	        TTSymbolPtr notificationName = NULL;
+            
+	 		v.get(0, outletIndex);
+	 		v.get(1, &notificationName);
+            
+	        // TODO: to support more than one notification->outlet we need see how many args are actually passed-in
+	        // and then we need to track them in a hashtab or something...
+            
+	        self->controlOutlet = outlet_new((t_pxobject*)self, NULL);
+            
+	        err = TTObjectInstantiate(TT("callback"), &self->controlCallback, kTTValNONE);
+	        self->controlCallback->setAttributeValue(TT("function"), TTPtr(&MaxAudioGraphWrappedClass_receiveNotificationForOutlet));
+	        self->controlCallback->setAttributeValue(TT("baton"), TTPtr(self));	
+            
+	        // dynamically add a message to the callback object so that it can handle the 'objectFreeing' notification
+	        self->controlCallback->registerMessage(notificationName, (TTMethod)&TTCallback::notify, kTTMessagePassValue);
+            
+	        // tell the source that is passed in that we want to watch it
+	        self->audioGraphObject->registerObserverForNotifications(*self->controlCallback);   
+		}
+		
 		attr_args_process(self, argc, argv);
 	}
 	return ObjectPtr(self);
@@ -113,7 +155,6 @@ void MaxAudioGraphWrappedClass_free(WrappedInstancePtr self)
 			object_free(self->inlets[i]);
 	}
 }
-
 
 
 // METHODS SPECIFIC TO AUDIO GRAPH EXTERNALS
