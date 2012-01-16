@@ -24,7 +24,7 @@ class TTAudioGraphPick : public TTAudioObject {
 		if (args.getSize() != mNumPickChannels){
 			mNumPickChannels = args.getSize();
 			mPickChannels.resize(mNumPickChannels);
-			outputNeedsResize = TRUE;
+			outputNeedsResize = true;
 		}
 				
 		for (TTUInt16 i=0; i<mNumPickChannels; i++) {
@@ -49,26 +49,28 @@ class TTAudioGraphPick : public TTAudioObject {
 		TTSampleValuePtr	inSample, outSample;
 		TTUInt16		inputChannelCount = in.getNumChannelsAsInt();		
 		TTUInt16		vs = out.getVectorSizeAsInt();
-		TTUInt16		currentPick, n;
+		TTUInt16		currentPick; 
 		
 		if (outputNeedsResize){
 		out.setMaxNumChannels(mNumPickChannels);
 		out.setNumChannels(mNumPickChannels);
-		outputNeedsResize = FALSE;
+		outputNeedsResize = false;
 		}
 		
 		for (TTUInt16 i=0; i < mNumPickChannels; i++) {
 			outSample = out.mSampleVectors[i];
-			n = vs;
+			//n = vs;
 			currentPick = mPickChannels[i];
 			if (currentPick <= inputChannelCount) {
 				inSample = in.mSampleVectors[mPickChannels[i]];					
-				while (n--)
-					*outSample++ = *inSample++;
+				//while (n--)
+				//	*outSample++ = *inSample++;
+				memcpy(outSample, inSample, sizeof(TTSampleValue) * vs);
 			}
 			else {
-				while (n--)
-					*outSample++ = 0.0;
+				memset(outSample, 0, sizeof(TTSampleValue) * vs);
+				//while (n--)
+				//	*outSample++ = 0.0;
 			}
 				
 		}

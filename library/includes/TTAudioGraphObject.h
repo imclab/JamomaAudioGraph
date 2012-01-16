@@ -30,7 +30,7 @@ class TTAUDIOGRAPH_EXPORT TTAudioGraphObject : public TTGraphObject {
 	
 protected:
 	TTAudioGraphProcessStatus	mStatus;			///< Used to enable correct processing of feedback loops, multiple destinations, etc.
-	TTAudioGraphDescriptionPtr	mAudioDescription;	///< Used to prevent feedback loops etc. when describing a graph
+	TTAudioGraphDescription		mAudioDescription;	///< Used to prevent feedback loops etc. when describing a graph
 	TTUInt32					mAudioFlags;		///< A bitmask of values defined in #TTAudioGraphFlags
 	TTAudioGraphInletVector		mAudioInlets;		///< The inlets through which we pull audio from sources
 	TTAudioGraphOutletVector	mAudioOutlets;		///< The inlets through which we pull audio from sources
@@ -117,7 +117,9 @@ public:
 	void getAudioDescription(TTAudioGraphDescription& desc);
 	
 	
-	/**	Clear the list of source objects from which this object will try to pull audio.	*/
+	/**	
+     Clear the list of source objects from which this object will try to pull audio.	
+     */
 	TTErr resetAudio();
 	
 	
